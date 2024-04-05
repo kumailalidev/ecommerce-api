@@ -1,1 +1,1 @@
-# ECommerce REST API
+# eCommerce REST API

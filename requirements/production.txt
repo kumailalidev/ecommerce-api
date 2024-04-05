@@ -1,0 +1,4 @@
+-r ./base.txt
+
+psycopg2-binary==2.9.9
+gunicorn==21.2.0
