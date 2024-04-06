@@ -26,6 +26,18 @@ services:
     env_file:
       - ./.env.dev.db
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4
+    volumes:
+      - pgadmin4_data:/var/lib/pgadmin
+    env_file:
+      - ./.env.dev.pgadmin
+    ports:
+      - "5050:80"
+    depends_on:
+      - database
+
   mailhog:
     image: mailhog/mailhog:v1.0.0
     container_name: mailhog
@@ -47,5 +59,6 @@ services:
 
 volumes:
   postgres_data:
+  pgadmin4_data:
   staticfiles:
   media:
