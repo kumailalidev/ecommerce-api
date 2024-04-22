@@ -55,6 +55,11 @@ SECURE_CONTENT_TYPE_NOSNIFF = env.bool(
     default=True,
 )
 
+# HTTP
+# ------------------------------------------------------------------------------
+# https://docs.djangoproject.com/en/dev/ref/settings/#use-x-forwarded-host
+USE_X_FORWARDED_HOST = env.bool("DJANGO_USE_X_FORWARDED_HOST", default=False)
+
 # EMAIL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#default-from-email

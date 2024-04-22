@@ -10,6 +10,7 @@ BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 # '/project' directory
 PROJECT_DIR = BASE_DIR / "project"
 
+# Load environment variables from os.environ
 env = environ.Env()
 
 # GENERAL
@@ -20,10 +21,10 @@ DEBUG = env.bool("DJANGO_DEBUG", default=False)
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
 # though not all of them may be available with every OS.
 # In Windows, this must be set to your system time zone.
-TIME_ZONE = "UTC"
 # https://docs.djangoproject.com/en/dev/ref/settings/#language-code
-# https://docs.djangoproject.com/en/dev/ref/settings/#site-id
-SITE_ID = 1
+LANGUAGE_CODE = "en-us"
+# https://docs.djangoproject.com/en/dev/ref/settings/#time-zone
+TIME_ZONE = "UTC"
 # https://docs.djangoproject.com/en/dev/ref/settings/#use-i18n
 USE_I18N = True
 # https://docs.djangoproject.com/en/dev/ref/settings/#use-l10n
@@ -36,6 +37,15 @@ LOCALE_PATHS = [str(BASE_DIR / "locale")]
 # DATABASE
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
+
+# POSTGRES
+# ------------------------------------------------------------------------------
+POSTGRES_DBNAME = env("DATABASE_NAME")
+POSTGRES_USER = env("DATABASE_USER")
+POSTGRES_PASSWORD = env("DATABASE_PASSWORD")
+POSTGRES_HOST = env("DATABASE_HOST")
+POSTGRES_PORT = env("DATABASE_PORT")
+
 DATABASES = {
     # PostgreSQL:   postgres://user:password@hostname_or_ip:port/database_name
     "default": env.db("DATABASE_URL")
@@ -55,7 +65,6 @@ DJANGO_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
-    "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.forms",
@@ -67,7 +76,7 @@ THIRD_PARTY_APPS = [
     "corsheaders",
 ]
 LOCAL_APPS = [
-    # ...
+    "project.core.apps.CoreConfig",
 ]
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -193,6 +202,10 @@ CSRF_TRUSTED_ORIGINS = []  # Default
 # https://docs.djangoproject.com/en/dev/ref/settings/#x-frame-options
 X_FRAME_OPTIONS = "DENY"
 
+# HTTP
+# ------------------------------------------------------------------------------
+# https://docs.djangoproject.com/en/dev/ref/settings/#use-x-forwarded-host
+USE_X_FORWARDED_HOST = False  # Default
 
 # EMAIL
 # ------------------------------------------------------------------------------
@@ -266,14 +279,41 @@ LOGGING = {
 # with primary_key=True.
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# REDIS
+# https://docs.djangoproject.com/en/dev/topics/cache/#redis
+# ------------------------------------------------------------------------------
+REDIS_HOST = env("REDIS_SERVER_HOST")
+REDIS_PORT = env("REDIS_SERVER_PORT")
+REDIS_DB = 1
+REDIS_CELERY_RESULT_BACKEND_DB = 2
+
+# RABBITMQ
+# https://www.rabbitmq.com/
+# ------------------------------------------------------------------------------
+RABBITMQ_HOST = env("BROKER_HOST")
+RABBITMQ_PORT = env("BROKER_PORT")
+RABBITMQ_USER = env("BROKER_USER")
+RABBITMQ_PASS = env("BROKER_PASSWORD")
+RABBITMQ_VHOST = env("BROKER_VHOST")
+RABBITMQ_URL = env("BROKER_URL")
+
+# CELERY
+# https://docs.celeryq.dev/en/stable/userguide/configuration.html
+# https://docs.celeryq.dev/en/stable/django/first-steps-with-django.html
+# ------------------------------------------------------------------------------
+CELERY_BROKER_URL = RABBITMQ_URL
+CELERY_RESULT_BACKEND = (
+    f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_CELERY_RESULT_BACKEND_DB}"
+)
+
 # Django REST Framework
 # ------------------------------------------------------------------------------
 # https://www.django-rest-framework.org/api-guide/settings/#settings
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         # Default
-        "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         # Default
@@ -287,8 +327,8 @@ REST_FRAMEWORK = {
 # https://github.com/tfranzel/drf-spectacular
 # https://drf-spectacular.readthedocs.io/en/latest/index.html
 SPECTACULAR_SETTINGS = {
-    "TITLE": "eCommerce API",
-    "DESCRIPTION": "The eCommerce REST API built with Django Rest Framework (DRF) serves as the backbone for an online store, enabling seamless communication between the front-end applications and the database. Leveraging the power of Django's robust framework and DRF's efficient tools for building RESTful APIs, this solution provides a scalable, secure, and highly customizable platform for conducting online transactions.",
+    "TITLE": "Django eCommerce API",
+    "DESCRIPTION": "eCommerce API built using Django REST Framework.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "SWAGGER_UI_DIST": "SIDECAR",  # shorthand to use the sidecar instead

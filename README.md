@@ -1,1 +1,1 @@
-# eCommerce REST API
+# Django eCommerce API

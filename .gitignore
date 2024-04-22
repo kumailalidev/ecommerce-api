@@ -2,6 +2,7 @@
 .vscode/
 etcetera/
 todo.txt
+**/env_files/prod/
 
 # Django stuff:
 *.log

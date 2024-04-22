@@ -1,64 +1,157 @@
+version: '3.8'
+
 services:
-  web:
+  app:
     build:
       context: .
-      dockerfile: docker/dev/web/dev.web.Dockerfile
+      dockerfile: docker/dev/app/dev.app.Dockerfile
     container_name: django
+    image: ${COMPOSE_PROJECT_NAME}_django
     volumes:
+      # ------------------------------------------------------------------------------
+      # this volume is used to map the files and folders on the host to the container
+      # so if we change code on the host, code in the docker container will also be
+      # changed. NOT REQUIRED IN PRODUCTION
+      # ------------------------------------------------------------------------------
       - .:/usr/src/app/
+      # ------------------------------------------------------------------------------
       - staticfiles:/usr/src/app/public/staticfiles
       - media:/usr/src/app/public/media
-    command: /usr/src/app/scripts/dev/dev.web.sh
+    command: /usr/src/app/scripts/dev/app/start.sh
     expose:
       - 8000
     env_file:
-      - ./.env.dev.db
-      - ./.env.dev
+      - ./env_files/dev/.env.app
     depends_on:
-      - database
-      - mailhog
+      - db
+      - smtp
 
-  database:
+  worker:
+    build:
+      context: .
+      dockerfile: docker/dev/app/dev.app.Dockerfile
+    container_name: celery_worker
+    image: ${COMPOSE_PROJECT_NAME}_celery_worker
+    volumes:
+      # ------------------------------------------------------------------------------
+      # this volume is used to map the files and folders on the host to the container
+      # so if we change code on the host, code in the docker container will also be
+      # changed. NOT REQUIRED IN PRODUCTION
+      # ------------------------------------------------------------------------------
+      - .:/usr/src/app/
+      # ------------------------------------------------------------------------------
+      - staticfiles:/usr/src/app/public/staticfiles
+      - media:/usr/src/app/public/media
+    command: /usr/src/app/scripts/dev/app/celery/worker/start.sh
+    env_file:
+      - ./env_files/dev/.env.app
+    depends_on:
+      - db
+      - redis
+      - broker
+      - smtp
+
+  flower:
+    build:
+      context: .
+      dockerfile: docker/dev/app/dev.app.Dockerfile
+    container_name: celery_flower
+    image: ${COMPOSE_PROJECT_NAME}_celery_flower
+    volumes:
+      # ------------------------------------------------------------------------------
+      # this volume is used to map the files and folders on the host to the container
+      # so if we change code on the host, code in the docker container will also be
+      # changed. NOT REQUIRED IN PRODUCTION
+      # ------------------------------------------------------------------------------
+      - .:/usr/src/app/
+      # ------------------------------------------------------------------------------
+      - staticfiles:/usr/src/app/public/staticfiles
+      - media:/usr/src/app/public/media
+    command: /usr/src/app/scripts/dev/app/celery/flower/start.sh
+    env_file:
+      - ./env_files/dev/.env.app
+    ports:
+      - ${FLOWER_PORT_MAP}:5555
+    depends_on:
+      - db
+      - redis
+      - broker
+      - smtp
+
+  db:
     image: postgres:15
     container_name: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-    env_file:
-      - ./.env.dev.db
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
 
-  pgadmin:
+  db_admin:
     image: dpage/pgadmin4
     container_name: pgadmin4
     volumes:
       - pgadmin4_data:/var/lib/pgadmin
-    env_file:
-      - ./.env.dev.pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${DB_ADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${DB_ADMIN_DEFAULT_PASSWORD}
+      - PGADMIN_LISTEN_PORT=${DB_ADMIN_LISTEN_PORT}
     ports:
-      - "5050:80"
+      - ${DB_ADMIN_LISTEN_PORT}:${DB_ADMIN_LISTEN_PORT}
     depends_on:
-      - database
+      - db
 
-  mailhog:
+  redis:
+    image: redis/redis-stack:latest
+    container_name: redis
+    volumes:
+      - redis_stack_data:/data
+    ports:
+      - ${REDIS_INSIGHT_PORT_MAP}:8001
+
+  broker:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - ${BROKER_MANGEMENT_PORT_MAP}:15672
+    environment:
+      - RABBITMQ_DEFAULT_USER=${BROKER_USER}
+      - RABBITMQ_DEFAULT_PASS=${BROKER_PASSWORD}
+      - RABBITMQ_DEFAULT_VHOST=${BROKER_VHOST}
+
+  smtp:
     image: mailhog/mailhog:v1.0.0
     container_name: mailhog
+    volumes:
+      - mailhog_data:${SMPT_STORAGE_PATH}
     ports:
-      - "8025:8025"
+      - ${SMTP_WEBUI_PORT}:${SMTP_WEBUI_PORT}
+    environment:
+      MH_STORAGE: ${SMPT_STORAGE}
+      MH_MAILDIR_PATH: ${SMPT_STORAGE_PATH}
 
-  nginx:
+  web:
     build:
-      context: ./docker/dev/nginx
-      dockerfile: dev.nginx.Dockerfile
+      context: ./docker/dev/web
+      dockerfile: dev.web.Dockerfile
+    image: ${COMPOSE_PROJECT_NAME}_nginx
     container_name: nginx
     volumes:
       - staticfiles:/usr/src/app/public/staticfiles
       - media:/usr/src/app/public/media
     ports:
-      - 1337:80
+      - ${WEB_PORT_MAP}:80
     depends_on:
-      - web
+      - app
 
 volumes:
   postgres_data:
   pgadmin4_data:
+  redis_stack_data:
+  rabbitmq_data:
+  mailhog_data:
   staticfiles:
   media:
