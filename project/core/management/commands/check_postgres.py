@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
-import psycopg2
+import psycopg
 
 
 class Command(BaseCommand):
@@ -16,7 +16,7 @@ class Command(BaseCommand):
         postgres_port = settings.POSTGRES_PORT
 
         try:
-            psycopg2.connect(
+            psycopg.connect(
                 dbname=postgres_dbname,
                 user=postgres_user,
                 password=postgres_password,
@@ -24,5 +24,5 @@ class Command(BaseCommand):
                 port=postgres_port,
             )
             self.stdout.write(self.style.SUCCESS("Postgres server is up and running."))
-        except psycopg2.OperationalError:
+        except psycopg.OperationalError:
             self.stdout.write(self.style.ERROR("Failed to connect to Postgres server."))

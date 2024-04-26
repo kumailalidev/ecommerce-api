@@ -11,6 +11,8 @@ ENV PYTHONUNBUFFERED 1
 # install system dependencies
 RUN apt-get update \
     && apt-get install -y netcat \
+    # installing psycopg[c] dependencies
+    && apt-get install -y gcc python-dev libpq-dev \
     # cleaning up unused files
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
     && rm -rf /var/lib/apt/lists/*
