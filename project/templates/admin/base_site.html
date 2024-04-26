@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+
+{% load static %}
+
+<!-- Admin title -->
+{% block title %}
+  {% if subtitle %}{{ subtitle }} |{% endif %}
+  {{ title }} | {{ site_title|default:_("Django site admin") }}
+{% endblock title %}
+<!-- Custom CSS -->
+{% block extrastyle %}
+  <link rel="stylesheet" type="text/css" href="{% static 'css/admin.css' %}" />
+{% endblock extrastyle %}
+<!-- Admin branding -->
+{% block branding %}
+  <h1 id="site-name">
+    <a href="{% url 'admin:index' %}"><strong>{{ site_header|default:_("Django administration") }}</strong></a>
+  </h1>
+  {% if user.is_anonymous %}
+    {% include "admin/color_theme_toggle.html" %}
+
+  {% endif %}
+{% endblock branding %}
+{% block nav-global %}
+{% endblock nav-global %}
+<!-- Admin title -->
+{% block content_title %}
+  {% if title %}
+    <h1>
+      <strong>{{ title }}</strong>
+    </h1>
+  {% endif %}
+{% endblock %}
